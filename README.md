@@ -1,2 +1,2 @@
 # ungs-scraper
-Get information from the UNGS website.
+Get information about all the careers from the UNGS website.

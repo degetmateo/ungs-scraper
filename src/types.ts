@@ -1,0 +1,1 @@
+export type CourseRegime = 'ANUAL' | 'SEMESTRAL' | 'INDEFINIDO';
