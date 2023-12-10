@@ -1,4 +1,3 @@
-import axios from "axios";
 import { load } from "cheerio";
 import Subject from "./subject";
 import { CourseRegime } from "./types";
@@ -16,8 +15,9 @@ export default class Career {
         const subjects = new Array<Subject>();
 
         try {
-            const res = await axios.get(this.url);
-            const $ = load(res.data);
+            const res = await fetch(this.url, { method: 'GET', mode: 'no-cors' })
+            const html = await res.text();
+            const $ = load(html);
 
             $('article').each((_, e) => {
                 const article = $(e);
@@ -56,6 +56,8 @@ export default class Career {
         } catch (error) {
             console.error(error);
         }
+
+        return subjects;
     }
 
     public getName () { return this.name };

@@ -1,2 +1,2 @@
 import Careers from "./careers";
-export { Careers }
+export default Careers;
