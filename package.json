@@ -4,7 +4,8 @@
   "description": "Get information about all the careers from the UNGS website.",
   "main": "index.ts",
   "scripts": {
-    "dev": "ts-node src/index.ts"
+    "dev": "ts-node src/index.ts",
+    "test": "ts-node tests/test.ts"
   },
   "keywords": [],
   "author": "degetmateo",
