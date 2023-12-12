@@ -24,10 +24,13 @@ export default class Career {
                 if (article.attr('data-url')?.includes('plan-de-estudios')) {
                     const table = article.find('table:first tbody');
 
-                    table.find('tr').each((_, row) => {
+                    table.find('tr').each((_, rowElement) => {
                         const rowData = new Array<string>()
+                        const row = $(rowElement);
 
-                        $(row).find('td').each((_, cell) => {
+                        if (row.attr('class')?.includes('header')) return;
+
+                        row.find('td').each((_, cell) => {
                             rowData.push($(cell).text());
                         })
 

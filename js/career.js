@@ -19,9 +19,12 @@ class Career {
                 const article = $(e);
                 if (article.attr('data-url')?.includes('plan-de-estudios')) {
                     const table = article.find('table:first tbody');
-                    table.find('tr').each((_, row) => {
+                    table.find('tr').each((_, rowElement) => {
                         const rowData = new Array();
-                        $(row).find('td').each((_, cell) => {
+                        const row = $(rowElement);
+                        if (row.attr('class')?.includes('header'))
+                            return;
+                        row.find('td').each((_, cell) => {
                             rowData.push($(cell).text());
                         });
                         if (rowData.length === 5 && rowData[0].length > 1) {
