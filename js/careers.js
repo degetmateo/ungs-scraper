@@ -9,13 +9,11 @@ class Careers {
     static async getCareers() {
         const careers = new Array();
         try {
-            const res = await fetch(this.URL_CAREERS, { method: 'GET', mode: 'no-cors' });
-            const html = await res.text();
-            const $ = (0, cheerio_1.load)(html);
+            const $ = (0, cheerio_1.load)(await this.getPage(this.URL_CAREERS));
             $('td a').each((i, e) => {
-                const cheerioElement = $(e);
-                const name = cheerioElement.text().trim();
-                const url = cheerioElement.attr('href');
+                const a = $(e);
+                const name = a.text().trim();
+                const url = a.attr('href');
                 if (name && url)
                     careers.push(new career_1.default(name, url));
             });
@@ -24,6 +22,15 @@ class Careers {
             console.error(error);
         }
         return careers;
+    }
+    static async getPage(url) {
+        try {
+            const res = await fetch(url, { method: 'GET' });
+            return await res.text();
+        }
+        catch (error) {
+            throw error;
+        }
     }
 }
 exports.default = Careers;

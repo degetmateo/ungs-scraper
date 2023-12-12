@@ -8,14 +8,12 @@ export default class Careers {
         const careers = new Array<Career>();
         
         try {
-            const res = await fetch(this.URL_CAREERS, { method: 'GET', mode: 'no-cors' })
-            const html = await res.text();
-            const $ = load(html);
+            const $ = load(await this.getPage(this.URL_CAREERS));
 
             $('td a').each((i, e) => {
-                const cheerioElement = $(e);
-                const name = cheerioElement.text().trim();
-                const url = cheerioElement.attr('href');
+                const a = $(e);
+                const name = a.text().trim();
+                const url = a.attr('href');
                 if (name && url) careers.push(new Career(name, url));
             });
         } catch (error) {
@@ -23,5 +21,14 @@ export default class Careers {
         }
 
         return careers;
+    }
+
+    public static async getPage (url: string): Promise<string> {
+        try {
+            const res = await fetch(url, { method: 'GET' });
+            return await res.text();
+        } catch (error) {
+            throw error;
+        }
     }
 }
