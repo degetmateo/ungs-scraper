@@ -29,12 +29,35 @@ class Career {
                     const row = $(row_element);
                     if (row.attr('class')?.includes('header'))
                         return;
-                    row.find('td').each((_, cell) => {
-                        rowData.push($(cell).text());
+                    row.find('td').each((_, cell_element) => {
+                        const cell = $(cell_element);
+                        rowData.push(cell.text());
                     });
-                    if (rowData.length != 5 || rowData[0].length < 1)
+                    if (rowData[0].length < 1 || rowData.length > 5)
                         return;
-                    subjects.push(this.createSubject(rowData));
+                    let subjectData;
+                    if (rowData.length === 4) {
+                        subjectData = {
+                            name: rowData[0],
+                            course_regime: 'INDEFINIDO',
+                            weekly_hours: rowData[1],
+                            total_hours: rowData[2],
+                            correlatives: rowData[3]
+                        };
+                    }
+                    else if (rowData.length === 5) {
+                        subjectData = {
+                            name: rowData[0],
+                            course_regime: rowData[1],
+                            weekly_hours: rowData[2],
+                            total_hours: rowData[3],
+                            correlatives: rowData[4]
+                        };
+                    }
+                    else {
+                        return;
+                    }
+                    subjects.push(this.createSubject(subjectData));
                 });
             });
         }
@@ -46,16 +69,16 @@ class Career {
     isCorrectArticle(e) {
         return (e.attribs['data-url'].includes('plan-de-estudios'));
     }
-    createSubject(row) {
+    createSubject(data) {
         try {
-            const name = row[0]
+            const name = data.name
                 .split('\n').join(' ')
                 .split('*').join('').trim();
-            const rd = row[1].toUpperCase().trim();
+            const rd = data.course_regime.toUpperCase().trim();
             const course_regime = (rd === 'ANUAL' || rd === 'SEMESTRAL') ? rd : 'INDEFINIDO';
-            const weekly_hours = isNaN(parseFloat(row[2])) ? 0 : parseFloat(row[2]);
-            const total_hours = isNaN(parseFloat(row[3])) ? 0 : parseFloat(row[3]);
-            const correlatives = row[4].trim().length > 0 ? row[4]
+            const weekly_hours = isNaN(parseFloat(data.weekly_hours)) ? 0 : parseFloat(data.weekly_hours);
+            const total_hours = isNaN(parseFloat(data.total_hours)) ? 0 : parseFloat(data.total_hours);
+            const correlatives = data.correlatives.trim().length > 0 ? data.correlatives
                 .split(';').join('-')
                 .split('–').join('-')
                 .split('\n').join('-')
@@ -73,14 +96,14 @@ class Career {
     // hay ciertos casos donde faltaran materias correlativas.
     parseSubjects(subjects) {
         for (const subject of subjects) {
-            const normalizedName = this.deleteTildes(subject.getName().toLowerCase().trim());
+            const normalizedName = this.normalize(subject.getName());
             for (const s2 of subjects) {
-                if (subject.getName() === s2.getName())
+                if (normalizedName === this.normalize(s2.getName()))
                     continue;
                 const correlatives = s2.getCorrelatives();
                 if (correlatives.length < 1)
                     continue;
-                const normalizedCorrelatives = this.deleteTildes(correlatives[0].toLowerCase().trim());
+                const normalizedCorrelatives = this.normalize(correlatives[0]);
                 if (normalizedCorrelatives.includes(normalizedName))
                     correlatives.push(subject.getName());
             }
@@ -90,8 +113,11 @@ class Career {
         }
         return subjects;
     }
-    deleteTildes(text) {
-        const mapaTildes = {
+    normalize(text) {
+        return ((this.deleteAccentMark(text)).toLowerCase()).replace(/\s/g, '');
+    }
+    deleteAccentMark(text) {
+        const map = {
             'á': 'a',
             'é': 'e',
             'í': 'i',
@@ -107,7 +133,7 @@ class Career {
             'Ü': 'U',
             'Ñ': 'N'
         };
-        return text.replace(/[áéíóúüñÁÉÍÓÚÜÑ]/g, letter => mapaTildes[letter]);
+        return text.replace(/[áéíóúüñÁÉÍÓÚÜÑ]/g, letter => map[letter]);
     }
     getName() {
         return this.name;

@@ -1,6 +1,6 @@
 import { Element, load } from "cheerio";
 import Subject from "./subject";
-import { CourseRegime } from "./types";
+import { CourseRegime, SubjectData } from "./types";
 import Careers from "./careers";
 
 export default class Career {
@@ -32,16 +32,38 @@ export default class Career {
                 table.find('tr').each((_, row_element) => {
                     const rowData = new Array<string>()
                     const row = $(row_element);
-
                     if (row.attr('class')?.includes('header')) return;
-
-                    row.find('td').each((_, cell) => {
-                        rowData.push($(cell).text());
+                    
+                    row.find('td').each((_, cell_element) => {
+                        const cell = $(cell_element);
+                        rowData.push(cell.text());
                     })
 
-                    if (rowData.length != 5 || rowData[0].length < 1) return;
+                    if (rowData[0].length < 1 || rowData.length > 5) return;
 
-                    subjects.push(this.createSubject(rowData));
+                    let subjectData: SubjectData;
+
+                    if (rowData.length === 4) {
+                        subjectData = {
+                            name: rowData[0],
+                            course_regime: 'INDEFINIDO',
+                            weekly_hours: rowData[1],
+                            total_hours: rowData[2],
+                            correlatives: rowData[3]
+                        }
+                    } else if (rowData.length === 5) {
+                        subjectData = {
+                            name: rowData[0],
+                            course_regime: rowData[1],
+                            weekly_hours: rowData[2],
+                            total_hours: rowData[3],
+                            correlatives: rowData[4]
+                        }
+                    } else {
+                        return;
+                    }
+
+                    subjects.push(this.createSubject(subjectData));
                 })
             });
         } catch (error) {
@@ -55,20 +77,20 @@ export default class Career {
         return (e.attribs['data-url'].includes('plan-de-estudios'));
     }
 
-    private createSubject(row: Array<string>): Subject {
+    private createSubject(data: SubjectData): Subject {
         try {
-            const name: string = row[0]
+            const name: string = data.name
                 .split('\n').join(' ')
                 .split('*').join('').trim();
     
-            const rd: string = row[1].toUpperCase().trim();
+            const rd: string = data.course_regime.toUpperCase().trim();
             const course_regime: CourseRegime =  (rd === 'ANUAL' || rd === 'SEMESTRAL') ? rd as CourseRegime : 'INDEFINIDO';
     
-            const weekly_hours: number = isNaN(parseFloat(row[2])) ? 0 : parseFloat(row[2]);
-            const total_hours: number = isNaN(parseFloat(row[3])) ? 0 : parseFloat(row[3]);
+            const weekly_hours: number = isNaN(parseFloat(data.weekly_hours)) ? 0 : parseFloat(data.weekly_hours);
+            const total_hours: number = isNaN(parseFloat(data.total_hours)) ? 0 : parseFloat(data.total_hours);
             
             const correlatives: Array<string> = 
-                row[4].trim().length > 0 ? row[4]
+            data.correlatives.trim().length > 0 ? data.correlatives
                     .split(';').join('-')
                     .split('–').join('-')
                     .split('\n').join('-')
@@ -88,15 +110,15 @@ export default class Career {
 
     private parseSubjects (subjects: Array<Subject>): Array<Subject> {
         for (const subject of subjects) {
-            const normalizedName = this.deleteTildes(subject.getName().toLowerCase().trim());
+            const normalizedName = this.normalize(subject.getName());
 
             for (const s2 of subjects) {
-                if (subject.getName() === s2.getName()) continue;
+                if (normalizedName === this.normalize(s2.getName())) continue;
 
                 const correlatives = s2.getCorrelatives();
                 if (correlatives.length < 1) continue;
 
-                const normalizedCorrelatives = this.deleteTildes(correlatives[0].toLowerCase().trim());
+                const normalizedCorrelatives = this.normalize(correlatives[0]);
                 if (normalizedCorrelatives.includes(normalizedName)) correlatives.push(subject.getName());
             }
         }
@@ -108,8 +130,12 @@ export default class Career {
         return subjects;
     }
 
-    private deleteTildes (text: string): string {
-        const mapaTildes: any = {
+    private normalize (text: string): string {
+        return ((this.deleteAccentMark(text)).toLowerCase()).replace(/\s/g, '');
+    }
+
+    private deleteAccentMark (text: string): string {
+        const map: any = {
             'á': 'a',
             'é': 'e',
             'í': 'i',
@@ -126,14 +152,14 @@ export default class Career {
             'Ñ': 'N'
         };
     
-        return text.replace(/[áéíóúüñÁÉÍÓÚÜÑ]/g, letter => mapaTildes[letter]);
+        return text.replace(/[áéíóúüñÁÉÍÓÚÜÑ]/g, letter => map[letter]);
     }
 
-    public getName () {
+    public getName (): string {
         return this.name
     };
     
-    public getURL () {
+    public getURL (): string {
         return this.url
     };
 }
