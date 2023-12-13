@@ -11,48 +11,60 @@ class Career {
         this.name = name;
         this.url = url;
     }
+    /**
+     * Returns an array of subjects.
+     * @returns {Array<Subject>}
+     */
     async getStudyPlan() {
         const subjects = new Array();
         try {
             const $ = (0, cheerio_1.load)(await careers_1.default.getPage(this.url));
             $('article').each((_, e) => {
+                if (!this.isCorrectArticle(e))
+                    return;
                 const article = $(e);
-                if (article.attr('data-url')?.includes('plan-de-estudios')) {
-                    const table = article.find('table:first tbody');
-                    table.find('tr').each((_, rowElement) => {
-                        const rowData = new Array();
-                        const row = $(rowElement);
-                        if (row.attr('class')?.includes('header'))
-                            return;
-                        row.find('td').each((_, cell) => {
-                            rowData.push($(cell).text());
-                        });
-                        if (rowData.length === 5 && rowData[0].length > 1) {
-                            const name = rowData[0]
-                                .split('\n').join(' ')
-                                .split('*').join('').trim();
-                            const rd = rowData[1].toUpperCase().trim();
-                            const course_regime = (rd === 'ANUAL' || rd === 'SEMESTRAL')
-                                ? rowData[1].toUpperCase() : 'INDEFINIDO';
-                            const weekly_hours = isNaN(parseFloat(rowData[2])) ? 0 : parseFloat(rowData[2]);
-                            const total_hours = isNaN(parseFloat(rowData[3])) ? 0 : parseFloat(rowData[3]);
-                            const correlatives = rowData[4].trim().length > 0 ? rowData[4]
-                                .split(';').join('-')
-                                .split('–').join('-')
-                                .split('\n').join('-')
-                                .split('\n').map(s => s.trim()) : [];
-                            const subject = new subject_1.default(name, course_regime, weekly_hours, total_hours, correlatives);
-                            subjects.push(subject);
-                        }
-                        ;
+                const table = article.find('table:first tbody');
+                table.find('tr').each((_, row_element) => {
+                    const rowData = new Array();
+                    const row = $(row_element);
+                    if (row.attr('class')?.includes('header'))
+                        return;
+                    row.find('td').each((_, cell) => {
+                        rowData.push($(cell).text());
                     });
-                }
+                    if (rowData.length != 5 || rowData[0].length < 1)
+                        return;
+                    subjects.push(this.createSubject(rowData));
+                });
             });
         }
         catch (error) {
             console.error(error);
         }
         return this.parseSubjects(subjects);
+    }
+    isCorrectArticle(e) {
+        return (e.attribs['data-url'].includes('plan-de-estudios'));
+    }
+    createSubject(row) {
+        try {
+            const name = row[0]
+                .split('\n').join(' ')
+                .split('*').join('').trim();
+            const rd = row[1].toUpperCase().trim();
+            const course_regime = (rd === 'ANUAL' || rd === 'SEMESTRAL') ? rd : 'INDEFINIDO';
+            const weekly_hours = isNaN(parseFloat(row[2])) ? 0 : parseFloat(row[2]);
+            const total_hours = isNaN(parseFloat(row[3])) ? 0 : parseFloat(row[3]);
+            const correlatives = row[4].trim().length > 0 ? row[4]
+                .split(';').join('-')
+                .split('–').join('-')
+                .split('\n').join('-')
+                .split('\n').map(s => s.trim()) : [];
+            return new subject_1.default(name, course_regime, weekly_hours, total_hours, correlatives);
+        }
+        catch (error) {
+            throw error;
+        }
     }
     // En la pagina hay muchas ocasiones en las que los nombres de las materias tienen faltas ortograficas, o el mismo nombre
     // fue escrito de formas diferentes en distintos lugares (con tildes y sin tildes, con mayusculas y sin mayusculas, a veces

@@ -4,6 +4,11 @@ import Career from './career';
 export default class Careers {
     public static readonly URL_CAREERS: string = 'https://www.ungs.edu.ar/category/estudiar-en-la-ungs/carreras';
 
+    /**
+     * Returns an array of careers.
+     * @returns {Array<Career>}
+     */
+    
     public static async getCareers (): Promise<Array<Career>> {
         const careers = new Array<Career>();
         

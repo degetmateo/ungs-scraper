@@ -6,6 +6,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const cheerio_1 = require("cheerio");
 const career_1 = __importDefault(require("./career"));
 class Careers {
+    /**
+     * Returns an array of careers.
+     * @returns {Array<Career>}
+     */
     static async getCareers() {
         const careers = new Array();
         try {

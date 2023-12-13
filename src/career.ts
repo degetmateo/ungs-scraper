@@ -1,4 +1,4 @@
-import { load } from "cheerio";
+import { Element, load } from "cheerio";
 import Subject from "./subject";
 import { CourseRegime } from "./types";
 import Careers from "./careers";
@@ -12,6 +12,11 @@ export default class Career {
         this.url = url;
     }
 
+    /**
+     * Returns an array of subjects.
+     * @returns {Array<Subject>}
+     */
+
     public async getStudyPlan (): Promise<Array<Subject>> {
         const subjects = new Array<Subject>();
 
@@ -19,52 +24,60 @@ export default class Career {
             const $ = load(await Careers.getPage(this.url));
 
             $('article').each((_, e) => {
+                if (!this.isCorrectArticle(e)) return;
+
                 const article = $(e);
+                const table = article.find('table:first tbody');
 
-                if (article.attr('data-url')?.includes('plan-de-estudios')) {
-                    const table = article.find('table:first tbody');
+                table.find('tr').each((_, row_element) => {
+                    const rowData = new Array<string>()
+                    const row = $(row_element);
 
-                    table.find('tr').each((_, rowElement) => {
-                        const rowData = new Array<string>()
-                        const row = $(rowElement);
+                    if (row.attr('class')?.includes('header')) return;
 
-                        if (row.attr('class')?.includes('header')) return;
-
-                        row.find('td').each((_, cell) => {
-                            rowData.push($(cell).text());
-                        })
-
-                        if (rowData.length === 5 && rowData[0].length > 1) {
-                            const name: string = rowData[0]
-                                .split('\n').join(' ')
-                                .split('*').join('').trim();
-
-                            const rd: string = rowData[1].toUpperCase().trim();
-                            const course_regime: CourseRegime = 
-                                (rd === 'ANUAL' || rd === 'SEMESTRAL')
-                                    ? rowData[1].toUpperCase() as CourseRegime : 'INDEFINIDO';
-
-                            const weekly_hours: number = isNaN(parseFloat(rowData[2])) ? 0 : parseFloat(rowData[2]);
-                            const total_hours: number = isNaN(parseFloat(rowData[3])) ? 0 : parseFloat(rowData[3]);
-                            const correlatives: Array<string> = 
-                                rowData[4].trim().length > 0 ? rowData[4]
-                                    .split(';').join('-')
-                                    .split('–').join('-')
-                                    .split('\n').join('-')
-                                    .split('\n').map(s => s.trim()) : [];
-
-                            const subject = new Subject(name, course_regime, weekly_hours, total_hours, correlatives);
-                            subjects.push(subject);
-                        };
+                    row.find('td').each((_, cell) => {
+                        rowData.push($(cell).text());
                     })
 
-                }
+                    if (rowData.length != 5 || rowData[0].length < 1) return;
+
+                    subjects.push(this.createSubject(rowData));
+                })
             });
         } catch (error) {
             console.error(error);
         }
 
         return this.parseSubjects(subjects);
+    }
+
+    private isCorrectArticle (e: Element): boolean {
+        return (e.attribs['data-url'].includes('plan-de-estudios'));
+    }
+
+    private createSubject(row: Array<string>): Subject {
+        try {
+            const name: string = row[0]
+                .split('\n').join(' ')
+                .split('*').join('').trim();
+    
+            const rd: string = row[1].toUpperCase().trim();
+            const course_regime: CourseRegime =  (rd === 'ANUAL' || rd === 'SEMESTRAL') ? rd as CourseRegime : 'INDEFINIDO';
+    
+            const weekly_hours: number = isNaN(parseFloat(row[2])) ? 0 : parseFloat(row[2]);
+            const total_hours: number = isNaN(parseFloat(row[3])) ? 0 : parseFloat(row[3]);
+            
+            const correlatives: Array<string> = 
+                row[4].trim().length > 0 ? row[4]
+                    .split(';').join('-')
+                    .split('–').join('-')
+                    .split('\n').join('-')
+                    .split('\n').map(s => s.trim()) : [];
+    
+            return new Subject(name, course_regime, weekly_hours, total_hours, correlatives);
+        } catch (error) {
+            throw error;
+        }
     }
 
     // En la pagina hay muchas ocasiones en las que los nombres de las materias tienen faltas ortograficas, o el mismo nombre
