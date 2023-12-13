@@ -1,7 +1,7 @@
 import { Element, load } from "cheerio";
 import Subject from "./subject";
 import { CourseRegime, SubjectData } from "./types";
-import Careers from "./careers";
+import { Careers } from "./careers";
 
 export default class Career {
     private name: string;
@@ -101,12 +101,6 @@ export default class Career {
             throw error;
         }
     }
-
-    // En la pagina hay muchas ocasiones en las que los nombres de las materias tienen faltas ortograficas, o el mismo nombre
-    // fue escrito de formas diferentes en distintos lugares (con tildes y sin tildes, con mayusculas y sin mayusculas, a veces
-    // falta una palabra en el nombre entero de la materia, o se comieron letras al escribir los nombres).
-    // En tales casos por el momento es imposible utilizar esos nombres mal escritos con comparaciones y por ende
-    // hay ciertos casos donde faltaran materias correlativas.
 
     private parseSubjects (subjects: Array<Subject>): Array<Subject> {
         for (const subject of subjects) {

@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const cheerio_1 = require("cheerio");
 const subject_1 = __importDefault(require("./subject"));
-const careers_1 = __importDefault(require("./careers"));
+const careers_1 = require("./careers");
 class Career {
     constructor(name, url) {
         this.name = name;
@@ -18,7 +18,7 @@ class Career {
     async getStudyPlan() {
         const subjects = new Array();
         try {
-            const $ = (0, cheerio_1.load)(await careers_1.default.getPage(this.url));
+            const $ = (0, cheerio_1.load)(await careers_1.Careers.getPage(this.url));
             $('article').each((_, e) => {
                 if (!this.isCorrectArticle(e))
                     return;
@@ -89,11 +89,6 @@ class Career {
             throw error;
         }
     }
-    // En la pagina hay muchas ocasiones en las que los nombres de las materias tienen faltas ortograficas, o el mismo nombre
-    // fue escrito de formas diferentes en distintos lugares (con tildes y sin tildes, con mayusculas y sin mayusculas, a veces
-    // falta una palabra en el nombre entero de la materia, o se comieron letras al escribir los nombres).
-    // En tales casos por el momento es imposible utilizar esos nombres mal escritos con comparaciones y por ende
-    // hay ciertos casos donde faltaran materias correlativas.
     parseSubjects(subjects) {
         for (const subject of subjects) {
             const normalizedName = this.normalize(subject.getName());

@@ -1,7 +1,7 @@
 import { load } from 'cheerio';
 import Career from './career';
 
-export default class Careers {
+export class Careers {
     public static readonly URL_CAREERS: string = 'https://www.ungs.edu.ar/category/estudiar-en-la-ungs/carreras';
 
     /**

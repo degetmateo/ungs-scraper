@@ -1,7 +1,5 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const careers_1 = __importDefault(require("./careers"));
-exports.default = careers_1.default;
+exports.Careers = void 0;
+const careers_1 = require("./careers");
+Object.defineProperty(exports, "Careers", { enumerable: true, get: function () { return careers_1.Careers; } });
