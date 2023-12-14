@@ -1,2 +1,2 @@
-import { Careers } from "./careers";
+import { Careers } from "./main/careers";
 export { Careers };
