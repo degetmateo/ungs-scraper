@@ -89,14 +89,15 @@ export default class Career {
             const weekly_hours: number = isNaN(parseFloat(data.weekly_hours)) ? 0 : parseFloat(data.weekly_hours);
             const total_hours: number = isNaN(parseFloat(data.total_hours)) ? 0 : parseFloat(data.total_hours);
             
-            const correlatives: Array<string> = 
-            data.correlatives.trim().length > 0 ? data.correlatives
-                    .split(';').join('-')
-                    .split('–').join('-')
-                    .split('\n').join('-')
-                    .split('\n').map(s => s.trim()) : [];
+            const correlatives = data.correlatives.trim();
+            const parsed_correlatives: Array<string> = 
+                data.correlatives.trim().length > 0 ? data.correlatives
+                        .split(';').join('-')
+                        .split('–').join('-')
+                        .split('\n').join('-')
+                        .split('\n').map(s => s.trim()) : [];
     
-            return new Subject(name, course_regime, weekly_hours, total_hours, correlatives);
+            return new Subject(name, course_regime, weekly_hours, total_hours, correlatives, parsed_correlatives);
         } catch (error) {
             throw error;
         }
@@ -109,16 +110,16 @@ export default class Career {
             for (const s2 of subjects) {
                 if (normalizedName === this.normalize(s2.getName())) continue;
 
-                const correlatives = s2.getCorrelatives();
-                if (correlatives.length < 1) continue;
+                const parsedCorrelatives = s2.getParsedCorrelatives();
+                if (parsedCorrelatives.length < 1) continue;
 
-                const normalizedCorrelatives = this.normalize(correlatives[0]);
-                if (normalizedCorrelatives.includes(normalizedName)) correlatives.push(subject.getName());
+                const normalizedCorrelatives = this.normalize(parsedCorrelatives[0]);
+                if (normalizedCorrelatives.includes(normalizedName)) parsedCorrelatives.push(subject.getName());
             }
         }
 
         for (const subject of subjects) {
-            subject.getCorrelatives().shift();
+            subject.getParsedCorrelatives().shift();
         }
 
         return subjects;
