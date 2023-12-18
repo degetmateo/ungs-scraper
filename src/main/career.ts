@@ -1,4 +1,4 @@
-import { Element, load } from "cheerio";
+import { load } from "cheerio";
 import Subject from "./subject";
 import { CourseRegime, SubjectData } from "./types";
 import { Careers } from "./careers";
@@ -22,50 +22,24 @@ export default class Career {
 
         try {
             const $ = load(await Careers.getPage(this.url));
-
-            $('article').each((_, e) => {
-                if (!this.isCorrectArticle(e)) return;
-
-                const article = $(e);
-                const table = article.find('table:first tbody');
-
-                table.find('tr').each((_, row_element) => {
-                    const rowData = new Array<string>()
-                    const row = $(row_element);
-                    if (row.attr('class')?.includes('header')) return;
-                    
-                    row.find('td').each((_, cell_element) => {
-                        const cell = $(cell_element);
-                        rowData.push(cell.text());
-                    })
-
-                    if (rowData[0].length < 1 || rowData.length > 5) return;
-
-                    let subjectData: SubjectData;
-
-                    if (rowData.length === 4) {
-                        subjectData = {
-                            name: rowData[0],
-                            course_regime: 'INDEFINIDO',
-                            weekly_hours: rowData[1],
-                            total_hours: rowData[2],
-                            correlatives: rowData[3]
-                        }
-                    } else if (rowData.length === 5) {
-                        subjectData = {
-                            name: rowData[0],
-                            course_regime: rowData[1],
-                            weekly_hours: rowData[2],
-                            total_hours: rowData[3],
-                            correlatives: rowData[4]
-                        }
-                    } else {
-                        return;
-                    }
-
-                    subjects.push(this.createSubject(subjectData));
+            const rows = $('article table:first tbody tr');
+    
+            rows.each((_, row) => {
+                if ($(row).attr('class')?.includes('header')) return;
+    
+                const data = new Array<string>();
+                
+                $(row).find('td').each((_, cell) => {
+                    data.push($(cell).text());
                 })
-            });
+    
+                if (data.length < 1 || data.length > 5) return;
+    
+                const parsedData = this.parseData(data);
+                if (!parsedData) return;
+    
+                subjects.push(this.createSubject(parsedData));
+            })
         } catch (error) {
             console.error(error);
         }
@@ -73,25 +47,47 @@ export default class Career {
         return this.parseSubjects(subjects);
     }
 
-    private isCorrectArticle (e: Element): boolean {
-        return (e.attribs['data-url'].includes('plan-de-estudios'));
+    private parseData (data: Array<string>) {
+        let sd: SubjectData;
+
+        if (data.length === 4) {
+            sd = {
+                name: data[0],
+                course_regime: 'INDEFINIDO',
+                weekly_hours: data[1],
+                total_hours: data[2],
+                correlatives: data[3]
+            }
+        } else if (data.length === 5) {
+            sd = {
+                name: data[0],
+                course_regime: data[1],
+                weekly_hours: data[2],
+                total_hours: data[3],
+                correlatives: data[4]
+            }
+        } else {
+            return null;
+        }
+
+        return sd;
     }
 
-    private createSubject(data: SubjectData): Subject {
+    private createSubject(sd: SubjectData): Subject {
         try {
-            const name: string = data.name
+            const name: string = sd.name
                 .split('\n').join(' ')
                 .split('*').join('').trim();
     
-            const rd: string = data.course_regime.toUpperCase().trim();
+            const rd: string = sd.course_regime.toUpperCase().trim();
             const course_regime: CourseRegime =  (rd === 'ANUAL' || rd === 'SEMESTRAL') ? rd as CourseRegime : 'INDEFINIDO';
     
-            const weekly_hours: number = isNaN(parseFloat(data.weekly_hours)) ? 0 : parseFloat(data.weekly_hours);
-            const total_hours: number = isNaN(parseFloat(data.total_hours)) ? 0 : parseFloat(data.total_hours);
+            const weekly_hours: number = isNaN(parseFloat(sd.weekly_hours)) ? 0 : parseFloat(sd.weekly_hours);
+            const total_hours: number = isNaN(parseFloat(sd.total_hours)) ? 0 : parseFloat(sd.total_hours);
             
-            const correlatives = data.correlatives.trim();
+            const correlatives = sd.correlatives.trim();
             const parsed_correlatives: Array<string> = 
-                data.correlatives.trim().length > 0 ? data.correlatives
+                sd.correlatives.trim().length > 0 ? sd.correlatives
                         .split(';').join('-')
                         .split('–').join('-')
                         .split('\n').join('-')
